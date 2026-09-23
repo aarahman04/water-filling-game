@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Water Fill Challenge — Web Preview</title>
+  <style>
+    :root {
+      --ink: #092b3a;
+      --muted: #6d8792;
+      --paper: #f6fbf9;
+      --panel: rgba(255,255,255,.78);
+      --line: #d7e8e8;
+      --aqua: #00a6a6;
+      --deep-aqua: #007d88;
+      --coral: #f36f5e;
+      --yellow: #ffd76a;
+      --shadow: 0 22px 70px rgba(16, 72, 82, .14);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      overflow-x: hidden;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button { font: inherit; }
+    .app-shell { min-height: 100vh; padding: 28px clamp(18px, 5vw, 74px) 44px; position: relative; overflow: hidden; }
+    .app-shell::before, .app-shell::after { content: ""; position: absolute; border-radius: 999px; pointer-events: none; z-index: -1; }
+    .app-shell::before { width: 420px; height: 420px; top: -220px; right: 9%; background: #d8f4ed; }
+    .app-shell::after { width: 300px; height: 300px; bottom: -160px; left: -80px; background: #fff0c2; }
+
+    .topbar, .game-grid { max-width: 1180px; margin: 0 auto; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 34px; }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 900; letter-spacing: -.04em; font-size: 1.1rem; }
+    .brand-mark { width: 36px; height: 36px; display: grid; place-items: center; color: white; background: var(--aqua); border-radius: 12px 12px 12px 3px; box-shadow: 4px 5px 0 #bde8df; }
+    .top-note { color: var(--muted); font-size: .8rem; letter-spacing: .12em; text-transform: uppercase; font-weight: 800; }
+
+    .game-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(300px, .75fr); gap: 22px; align-items: stretch; }
+    .card { background: var(--panel); border: 1px solid rgba(255,255,255,.9); border-radius: 30px; box-shadow: var(--shadow); backdrop-filter: blur(12px); }
+    .play-card { padding: clamp(22px, 4vw, 42px); }
+    .eyebrow { margin: 0 0 10px; color: var(--deep-aqua); font-size: .76rem; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; }
+    h1, h2, p { margin-top: 0; }
+    h1 { max-width: 570px; margin-bottom: 10px; font-size: clamp(2.2rem, 5vw, 4.7rem); line-height: .92; letter-spacing: -.075em; }
+    .subhead { color: var(--muted); max-width: 480px; line-height: 1.55; font-size: 1rem; }
+
+    .status-row { display: flex; flex-wrap: wrap; gap: 9px; margin: 27px 0 22px; }
+    .pill { border: 1px solid var(--line); background: rgba(255,255,255,.7); border-radius: 999px; padding: 8px 12px; font-size: .78rem; font-weight: 800; }
+    .pill strong { color: var(--deep-aqua); }
+    .pill strong.lives { color: #e64050; letter-spacing: .1em; text-shadow: 0 1px 0 rgba(230,64,80,.15); }
+
+    .meter-stage { position: relative; min-height: 430px; overflow: hidden; border-radius: 24px; background: linear-gradient(145deg, #e9faf5, #e4f4fa); border: 1px solid #d4eceb; }
+    .meter-stage::before { content: ""; position: absolute; inset: 0; opacity: .42; background-image: radial-gradient(#a9d8d2 1px, transparent 1px); background-size: 18px 18px; }
+    .meter-label { position: absolute; top: 20px; left: 22px; right: 22px; display: flex; justify-content: space-between; gap: 12px; z-index: 4; font-size: .85rem; font-weight: 900; }
+    .meter-label span:last-child { color: var(--deep-aqua); }
+    .pour-stream { position: absolute; top: 0; left: 50%; width: 22px; height: 58%; opacity: 0; transform: translateX(-50%); background: linear-gradient(90deg, rgba(0,137,160,.18), #29d4d0 38%, rgba(255,255,255,.9) 53%, rgba(0,137,160,.28)); border-radius: 99px; filter: blur(.2px); z-index: 5; transform-origin: top; box-shadow: 8px 12px 0 -7px rgba(0,137,160,.35), -9px 25px 0 -8px rgba(41,212,208,.55); }
+    .pour-stream::before { content: ""; position: absolute; right: -17px; bottom: 8px; width: 9px; height: 18px; border-radius: 80% 20% 70% 30%; background: rgba(41,212,208,.72); transform: rotate(22deg); }
+    .pour-stream::after { content: ""; position: absolute; left: 50%; bottom: -25px; width: 58px; height: 42px; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(ellipse, rgba(39,211,207,.72), rgba(255,255,255,.25) 34%, transparent 70%); box-shadow: 0 5px 12px rgba(0,106,130,.2); }
+    .meter-stage.is-filling .pour-stream { opacity: .95; animation: pourPulse .34s ease-in-out infinite alternate; }
+    .glass { position: absolute; left: 50%; bottom: 42px; width: min(230px, 46%); height: 260px; transform: translateX(-50%); border: 5px solid rgba(9,43,58,.68); border-top: 0; border-radius: 0 0 48% 48%; background: linear-gradient(110deg, rgba(255,255,255,.5), rgba(198,239,239,.15) 38%, rgba(255,255,255,.42) 78%); overflow: visible; box-shadow: inset 0 0 0 6px rgba(255,255,255,.32), inset 18px 0 22px rgba(255,255,255,.18), 0 18px 25px rgba(9,43,58,.16); z-index: 3; }
+    .glass-inner { position: absolute; inset: 0 4px 4px; overflow: hidden; border-radius: 0 0 44% 44%; }
+    .glass::before, .glass::after { content: ""; position: absolute; left: -5px; right: -5px; top: -14px; height: 22px; border: 5px solid rgba(9,43,58,.68); border-radius: 50%; background: rgba(231,250,248,.28); z-index: 3; }
+    .glass::after { left: 8px; right: 8px; top: -7px; height: 10px; border: 2px solid rgba(255,255,255,.75); background: rgba(0,125,136,.08); opacity: .9; }
+    .glass .shine-left, .glass .shine-right { position: absolute; top: 18px; bottom: 22px; width: 5px; border-radius: 99px; background: rgba(255,255,255,.6); z-index: 3; pointer-events: none; }
+    .glass .shine-left { left: 15px; } .glass .shine-right { right: 16px; opacity: .45; }
+    .water { position: absolute; left: 0; right: 0; bottom: 0; height: 0%; border-radius: 50% 50% 44% 44% / 12px 12px 44% 44%; background: linear-gradient(180deg, #47ded2 0%, #079db0 30%, #006b8b 100%); transition: height .08s linear; box-shadow: inset 0 10px 16px rgba(255,255,255,.2); }
+    .water::before { content: ""; position: absolute; left: -15%; right: -15%; top: -9px; height: 20px; background: rgba(155,255,246,.65); border-radius: 50%; box-shadow: 0 3px 7px rgba(0,84,113,.25); animation: waterShimmer 1.15s linear infinite; }
+    .water::after { content: ""; position: absolute; inset: 14px 18px; opacity: .3; background-image: radial-gradient(circle, white 0 1.5px, transparent 2px); background-size: 28px 38px; animation: bubbles 2.6s linear infinite; }
+    .target-hint { position: absolute; left: calc(50% + min(128px, 26%)); bottom: calc(42px + 260px * var(--target-progress, .5)); z-index: 4; display: flex; align-items: center; gap: 7px; color: var(--deep-aqua); font-size: .65rem; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; transform: translateY(50%); transition: bottom .12s linear; }
+    .target-hint::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--yellow); box-shadow: 0 0 0 5px rgba(255,215,106,.25); }
+    .target-hint.ready { color: #15845e; }
+    .target-hint.ready::before { background: #46d28f; box-shadow: 0 0 0 5px rgba(70,210,143,.22); }
+    .glass-caption { position: absolute; bottom: 14px; left: 0; right: 0; text-align: center; color: var(--muted); font-size: .75rem; font-weight: 800; }
+
+    .controls { display: grid; grid-template-columns: 1fr auto; gap: 12px; margin-top: 18px; }
+    .hold-button, .secondary-button { min-height: 56px; border-radius: 16px; cursor: pointer; font-weight: 900; transition: transform .16s ease, box-shadow .16s ease, background .16s ease; }
+    .hold-button { color: white; border: 0; background: var(--ink); box-shadow: 0 6px 0 #15546a; letter-spacing: .05em; }
+    .hold-button:hover, .hold-button:focus-visible { background: var(--deep-aqua); transform: translateY(-2px); box-shadow: 0 8px 0 #15546a; }
+    .hold-button:active, .hold-button.is-filling { transform: translateY(4px); box-shadow: 0 2px 0 #15546a; background: var(--coral); }
+    .secondary-button { padding: 0 20px; border: 1px solid var(--line); color: var(--ink); background: white; }
+    .secondary-button:hover, .secondary-button:focus-visible { border-color: var(--aqua); color: var(--deep-aqua); }
+    button:focus-visible { outline: 4px solid rgba(0,166,166,.3); outline-offset: 3px; }
+    .hint { text-align: center; min-height: 24px; margin: 15px 0 0; color: var(--muted); font-size: .86rem; font-weight: 700; }
+
+    .side-card { padding: 28px; display: flex; flex-direction: column; }
+    .side-card h2 { margin-bottom: 8px; font-size: 1.55rem; letter-spacing: -.045em; }
+    .side-copy { color: var(--muted); line-height: 1.5; font-size: .92rem; }
+    .rule { height: 1px; margin: 22px 0; background: var(--line); }
+    .score-label { color: var(--muted); font-size: .75rem; letter-spacing: .14em; font-weight: 900; text-transform: uppercase; }
+    .score { margin: 4px 0 0; font-size: 3.7rem; line-height: 1; letter-spacing: -.08em; }
+    .score small { color: var(--muted); font-size: 1rem; letter-spacing: 0; }
+    .tips { display: grid; gap: 12px; margin-top: 24px; }
+    .tip { display: grid; grid-template-columns: 32px 1fr; gap: 10px; align-items: start; color: var(--muted); font-size: .87rem; line-height: 1.42; }
+    .tip b { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; color: var(--ink); background: var(--yellow); }
+    .restart { margin-top: auto; padding-top: 28px; }
+
+    .summary { display: none; position: relative; overflow: hidden; max-width: 720px; margin: 0 auto; padding: 28px clamp(22px, 5vw, 48px); }
+    .summary.visible { display: block; }
+    .game-grid.hidden { display: none; }
+    .summary h2 { font-size: clamp(2.3rem, 6vw, 4.7rem); line-height: .95; letter-spacing: -.08em; margin-bottom: 12px; }
+    .summary-score { color: var(--deep-aqua); font-size: 4rem; font-weight: 900; letter-spacing: -.08em; }
+    .results { margin: 24px 0; border-top: 1px solid var(--line); }
+    .result-row { display: flex; justify-content: space-between; gap: 18px; padding: 14px 0; border-bottom: 1px solid var(--line); font-size: .9rem; }
+    .result-row strong { color: var(--deep-aqua); }
+    .summary-actions { display: flex; gap: 12px; margin-top: 24px; }
+    .summary-actions button { flex: 1; }
+    .success-accent { color: var(--coral); }
+    .celebrate-title { display: none; position: relative; z-index: 2; margin: 4px 0 12px; color: var(--coral); font-size: clamp(1.1rem, 3vw, 1.55rem); font-weight: 950; letter-spacing: .18em; }
+    .summary.is-success .celebrate-title { display: block; }
+    .celebration { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+    .confetti { position: absolute; top: -24px; left: var(--x); width: 10px; height: 18px; border-radius: 3px; background: var(--color); transform: rotate(var(--rotate)); animation: confettiFall var(--duration) var(--delay) ease-in forwards; }
+
+    @media (max-width: 800px) {
+      .game-grid { grid-template-columns: 1fr; }
+      .side-card { min-height: auto; }
+      .restart { margin-top: 12px; }
+    }
+    @media (max-width: 500px) {
+      .app-shell { padding: 18px 12px 30px; }
+      .topbar { margin-bottom: 22px; }
+      .top-note { display: none; }
+      .play-card, .side-card { padding: 20px; border-radius: 24px; }
+      .meter-stage { min-height: 350px; }
+      .meter-label { left: 14px; right: 14px; font-size: .76rem; }
+      .glass { height: 225px; width: 170px; bottom: 34px; }
+      .target-hint { left: auto; right: 12px; bottom: calc(34px + 225px * var(--target-progress, .5)); font-size: .58rem; }
+      .controls { grid-template-columns: 1fr; }
+      .secondary-button { min-height: 48px; }
+    }
+    @media (max-width: 380px) {
+      .app-shell { padding-inline: 8px; }
+      .play-card, .side-card { padding: 16px; }
+      h1 { font-size: 2.35rem; }
+      .meter-stage { min-height: 318px; }
+      .glass { width: 142px; height: 198px; bottom: 30px; }
+      .target-hint { right: 8px; bottom: calc(30px + 198px * var(--target-progress, .5)); }
+      .glass-caption { bottom: 9px; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; } }
+    @keyframes pourPulse { from { transform: translateX(-50%) scaleX(.82); } to { transform: translateX(-50%) scaleX(1.18); } }
+    @keyframes waterShimmer { from { transform: translateX(-5%); } to { transform: translateX(5%); } }
+    @keyframes bubbles { from { transform: translateY(35px); opacity: 0; } 20% { opacity: .3; } to { transform: translateY(-45px); opacity: 0; } }
+    @keyframes confettiFall { 0% { opacity: 0; transform: translateY(-20px) rotate(0deg); } 12% { opacity: 1; } 100% { opacity: 0; transform: translate3d(var(--drift), 680px, 0) rotate(720deg); } }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">≈</span><span>Water Fill Challenge</span></div>
+      <div class="top-note">A precision game in small sips</div>
+    </header>
+
+    <section id="gameView" class="game-grid">
+      <article class="card play-card">
+        <p class="eyebrow">Level <span id="levelEyebrow">1</span></p>
+        <h1>Stop the pour at the perfect line.</h1>
+        <p class="subhead">Hold the button to pour. Release when your timing feels right. Precision earns the score.</p>
+
+        <div class="status-row">
+          <span class="pill">Level <strong id="levelPill">1</strong></span>
+          <span class="pill">Lives <strong id="livesPill" class="lives">♥♥♥♥♥</strong></span>
+          <span class="pill">Total <strong id="totalPill">0</strong></span>
+        </div>
+
+        <div id="meter-stage" class="meter-stage" aria-label="Water meter game area">
+          <div class="meter-label"><span>Target <span id="targetReadout">420</span> ml</span><span id="currentReadout">0 ml</span></div>
+          <div id="pourStream" class="pour-stream" aria-hidden="true"></div>
+          <div id="targetHint" class="target-hint">aim here</div>
+          <div class="glass" aria-hidden="true">
+            <div class="glass-inner"><span class="shine-left"></span><span class="shine-right"></span><div id="water" class="water"></div></div>
+          </div>
+          <div class="glass-caption">hold + release</div>
+        </div>
+
+        <div class="controls">
+          <button id="holdButton" class="hold-button" type="button" aria-label="Hold to fill water">HOLD TO FILL</button>
+          <button id="stopButton" class="secondary-button" type="button">STOP</button>
+        </div>
+        <p id="hint" class="hint" role="status">Use your timing, not your panic.</p>
+      </article>
+
+      <aside class="card side-card">
+        <p class="eyebrow">Your run</p>
+        <h2>Small margin. Big difference.</h2>
+        <p class="side-copy">Every level adds another pour. You have five lives, and the stream gets quicker as you climb.</p>
+        <div class="rule"></div>
+        <div class="score-label">Total score</div>
+        <div class="score"><span id="scoreBig">0</span> <small>pts</small></div>
+        <div class="tips">
+          <div class="tip"><b>01</b><span>Use the target and current readings as your guide.</span></div>
+          <div class="tip"><b>02</b><span>Release slightly early if you tend to overshoot.</span></div>
+          <div class="tip"><b>03</b><span>Later levels pour faster.</span></div>
+        </div>
+        <div class="restart"><button id="restartButton" class="secondary-button" type="button">Restart level</button></div>
+      </aside>
+    </section>
+
+    <section id="summaryView" class="card summary" aria-live="polite">
+      <div id="celebration" class="celebration" aria-hidden="true"></div>
+      <p class="eyebrow">Level <span id="summaryLevel">1</span> result</p>
+      <div id="celebrationTitle" class="celebrate-title">CONGRATULATIONS!</div>
+      <h2 id="summaryTitle">Level complete.</h2>
+      <p id="summaryCopy" class="side-copy"></p>
+      <div class="summary-score"><span id="summaryScore">0</span> <small>points</small></div>
+      <div id="results" class="results"></div>
+      <div class="summary-actions">
+        <button id="retryButton" class="secondary-button" type="button">Retry level</button>
+        <button id="nextButton" class="hold-button" type="button">Next level</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const targetSets = {
+      1: 420,
+      2: 500,
+      3: 580,
+      4: 660,
+      5: 740,
+      6: 800,
+      7: 860,
+      8: 900,
+      9: 930,
+      10: 950
+    };
+    const state = { level: 1, task: 1, totalTasks: 1, target: 420, amount: 0, filling: false, locked: false, levelScore: 0, totalScore: 0, completedLevels: 0, lives: 5, results: [] };
+    let fillTimer = null;
+    const $ = (id) => document.getElementById(id);
+
+    function targetFor(level) { return targetSets[level] || Math.min(950, 420 + level * 35); }
+    function tolerance() { return Math.max(15, state.target * (state.level <= 3 ? .05 : .04)); }
+    function update() {
+      $("levelEyebrow").textContent = state.level;
+      $("levelPill").textContent = state.level; $("livesPill").textContent = "♥".repeat(state.lives) + "♡".repeat(5 - state.lives); $("totalPill").textContent = state.totalScore;
+      $("targetReadout").textContent = state.target; $("currentReadout").textContent = `${Math.floor(state.amount)} ml`; $("scoreBig").textContent = state.totalScore;
+      const targetHint = $("targetHint"); const inReleaseZone = state.amount >= state.target - tolerance() * 1.5 && state.amount <= state.target; targetHint.classList.toggle("ready", inReleaseZone); targetHint.lastChild.textContent = state.amount > state.target ? "too far" : inReleaseZone ? "release now" : `aim ${state.target} ml`;
+      const capacity = state.target * 1.22; $("water").style.height = `${Math.min(state.amount / capacity * 100, 100)}%`; $("targetHint").style.setProperty("--target-progress", state.target / capacity);
+    }
+    function resetTask() { state.target = targetFor(state.level); state.amount = 0; state.locked = false; state.filling = false; update(); }
+    function beginFill() { if (state.locked || state.filling) return; state.filling = true; $("holdButton").classList.add("is-filling"); $("meter-stage").classList.add("is-filling"); $("hint").textContent = "Steady pour. Release in the green hint zone."; const interval = Math.max(16, 34 - state.level * 2); const baseIncrement = 12.5 + state.level * 1.6; fillTimer = setInterval(() => { const remaining = state.target - state.amount; const ease = remaining > state.target * .1 ? 1 : remaining > 0 ? .55 : 1; state.amount += baseIncrement * ease; update(); if (state.amount > state.target * 1.25) { stopFill(true); } }, interval); }
+    function stopFill(overfilled = false) {
+      if (!state.filling || state.locked) return; clearInterval(fillTimer); fillTimer = null; state.filling = false; $("holdButton").classList.remove("is-filling"); $("meter-stage").classList.remove("is-filling");
+      const difference = Math.abs(state.amount - state.target); const ok = !overfilled && state.amount <= state.target && difference <= tolerance(); const score = ok ? Math.floor(100 * (1 - Math.min(difference / state.target, 1))) : 0;
+      state.locked = true; state.levelScore += score; state.totalScore += score; update();
+      if (!ok) { state.lives--; state.results.push({ target: state.target, actual: Math.floor(state.amount), score }); update(); if (state.lives <= 0) showSummary(false); else { resetTask(); $("hint").textContent = `Missed. ${state.lives} ${state.lives === 1 ? "life" : "lives"} left — try again.`; } }
+      else if (state.task === state.totalTasks) { state.results.push({ target: state.target, actual: Math.floor(state.amount), score }); showSummary(true); }
+      else { state.results.push({ target: state.target, actual: Math.floor(state.amount), score }); showSummary(true); }
+    }
+    function showSummary(success) {
+      if (success) state.completedLevels++;
+      $("gameView").classList.add("hidden"); $("summaryView").classList.add("visible"); $("summaryView").classList.toggle("is-success", success); $("summaryLevel").textContent = state.level; $("summaryScore").textContent = state.levelScore;
+      $("summaryTitle").textContent = success ? `Level ${state.level} complete.` : `Level ${state.level} missed.`; $("summaryTitle").classList.toggle("success-accent", success);
+      $("summaryCopy").textContent = success ? `You found the rhythm across ${state.results.length} pour${state.results.length === 1 ? "" : "s"}. Ready for a faster stream?` : "You used all five lives. Reset the level and try a calmer release.";
+      $("celebration").innerHTML = success ? Array.from({ length: 28 }, (_, i) => `<span class="confetti" style="--x:${(i * 37) % 100}%;--drift:${(i % 2 ? 1 : -1) * (20 + (i * 13) % 70)}px;--rotate:${i * 17}deg;--color:${["#f36f5e", "#00a6a6", "#ffd76a", "#7b61ff"][i % 4]};--delay:${(i % 8) * .08}s;--duration:${2.1 + (i % 5) * .16}s"></span>`).join("") : "";
+      $("results").innerHTML = state.results.map((r) => `<div class="result-row"><span>Target ${r.target} → ${r.actual} ml</span><strong>${r.score}/100</strong></div>`).join(""); $("nextButton").style.display = success ? "block" : "none";
+    }
+    function retry() { state.levelScore = 0; state.lives = 5; state.results = []; $("summaryView").classList.remove("visible"); $("gameView").classList.remove("hidden"); resetTask(); }
+    function next() { state.level++; state.levelScore = 0; state.lives = 5; state.results = []; $("summaryView").classList.remove("visible"); $("gameView").classList.remove("hidden"); resetTask(); }
+
+    const hold = $("holdButton");
+    hold.addEventListener("pointerdown", (e) => { e.preventDefault(); hold.setPointerCapture?.(e.pointerId); beginFill(); });
+    ["pointerup", "pointercancel", "lostpointercapture"].forEach(type => hold.addEventListener(type, () => stopFill()));
+    hold.addEventListener("keydown", (e) => { if ((e.key === " " || e.key === "Enter") && !e.repeat) { e.preventDefault(); beginFill(); } });
+    hold.addEventListener("keyup", (e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); stopFill(); } });
+    $("stopButton").addEventListener("click", () => stopFill()); $("restartButton").addEventListener("click", retry); $("retryButton").addEventListener("click", retry); $("nextButton").addEventListener("click", next);
+    update();
+  </script>
+</body>
+</html>
